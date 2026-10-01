@@ -1,0 +1,8 @@
+# Big or regenerable stuff stays out of git
+data/
+logs/
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store

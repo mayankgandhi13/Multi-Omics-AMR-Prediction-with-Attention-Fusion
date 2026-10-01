@@ -1,0 +1,19 @@
+# Phase 1 environment: everything needed for the WGS baselines.
+# (Bioinformatics tools for Phases 2-3 will get their own env later;
+#  mixing them with PyTorch makes conda's solver very unhappy.)
+#
+#   conda env create -f environment.yml
+name: amr
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - pyyaml
+  - pip
+  - pip:
+      - torch   # on Linux this wheel ships with CUDA, so it uses Explorer's GPUs as-is

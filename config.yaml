@@ -1,0 +1,26 @@
+# One place for every knob in the project.
+# Paths are relative to the repo root unless you give an absolute path.
+
+# Where data lives. On Explorer this is overridden by $AMR_DATA_DIR
+# (set in slurm/common.sh) so big files go to /scratch, not /home.
+data_dir: data
+results_dir: results
+
+antibiotics: [CIP, CTX, CTZ, GEN]
+
+seed: 42
+n_folds: 5
+
+lineage:
+  # Isolates closer than this fraction of SNP positions count as "family"
+  # and always land in the same fold. 0.02 = 2% (~1,200 of ~61k SNP positions).
+  max_distance: 0.02
+
+fcgr:
+  k: 6          # 4^6 = 4,096 possible 6-letter words -> a 64x64 image
+
+cnn:
+  epochs: 50
+  batch_size: 8   # same as the original paper
+  lr: 0.001
+  weight_decay: 0.0001
