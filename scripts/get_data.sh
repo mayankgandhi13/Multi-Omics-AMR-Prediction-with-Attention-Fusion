@@ -17,7 +17,13 @@ fi
 
 mkdir -p "$RAW"
 echo "Downloading Giessen dataset to $RAW ..."
-curl -L --fail --silent --show-error -o "$RAW/Giessen_dataset.zip" "$URL"
-unzip -q -o "$RAW/Giessen_dataset.zip" -d "$RAW"
-rm "$RAW/Giessen_dataset.zip"
+# Unpack into a temporary folder and only move it into place once it's complete,
+# so a half-finished download can never be mistaken for the real thing.
+TMP="$RAW/.incomplete"
+rm -rf "$TMP" "$RAW/Giessen_dataset"
+mkdir -p "$TMP"
+curl -L --fail --silent --show-error -o "$TMP/Giessen_dataset.zip" "$URL"
+unzip -q "$TMP/Giessen_dataset.zip" -d "$TMP"
+mv "$TMP/Giessen_dataset" "$RAW/Giessen_dataset"
+rm -rf "$TMP"
 echo "Done."
