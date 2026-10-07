@@ -7,6 +7,11 @@
 set -eo pipefail
 source slurm/common.sh
 
+# conda and pip keep a cache of every download (several GB for PyTorch).
+# Park conda's cache on /scratch and skip pip's, so /home's small quota stays free.
+export CONDA_PKGS_DIRS="/scratch/$USER/conda-pkgs"
+export PIP_NO_CACHE_DIR=1
+
 if [ -d "$ENV_PREFIX" ]; then
     echo "Env already exists at $ENV_PREFIX (delete it to rebuild)."
 else
