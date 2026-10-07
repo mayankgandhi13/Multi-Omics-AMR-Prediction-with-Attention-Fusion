@@ -1,9 +1,11 @@
 # Shared settings for every Explorer job. Sourced by the other scripts in slurm/.
 # If your paths differ, edit these two lines (or export the variables before submitting).
 
-# Conda env location. /home has a small fixed quota; if your PI has a /projects
-# space, put the env there instead, e.g. /projects/<lab>/envs/amr
-ENV_PREFIX="${ENV_PREFIX:-$HOME/envs/amr}"
+# Conda env location. Not /home: an env is thousands of tiny files and /home's
+# disk handles those like a queue at the post office (a first install there
+# crawled for 45 minutes). /scratch is fast. It gets purged now and then, but
+# run_all.sh checks the env on every run and quietly rebuilds it if it's gone.
+ENV_PREFIX="${ENV_PREFIX:-/scratch/$USER/envs/amr}"
 
 # Data lives on /scratch: fast and roomy, but purged now and then. That's fine
 # here, because scripts/get_data.sh re-downloads it and src.prepare rebuilds the rest.

@@ -104,17 +104,12 @@ Seven model variants will be trained and compared:
 git clone https://github.com/mayankgandhi13/Multi-Omics-AMR-Prediction-with-Attention-Fusion.git
 cd Multi-Omics-AMR-Prediction-with-Attention-Fusion
 
-# one-time: build the conda env on a compute node
-srun --partition=short --cpus-per-task=4 --mem=16G --time=01:00:00 --pty bash
-bash slurm/setup_env.sh
-exit
-
-# run all of Phase 1: download -> prepare -> baselines + CNNs (GPU) -> summary
+# run all of Phase 1: env check -> download -> prepare -> baselines + CNNs (GPU) -> summary
 bash slurm/run_all.sh
 squeue -u $USER
 ```
 
-Paths live in [`slurm/common.sh`](slurm/common.sh): the conda env defaults to `~/envs/amr` (use `/projects` if your lab has space), and data goes to `/scratch/$USER/amr-data`. Partition names (`short`, `gpu`) are in each `.sbatch` header; check `sinfo -s` if yours differ.
+The first run also builds the conda env (~10 min); later runs just check it. Paths live in [`slurm/common.sh`](slurm/common.sh): the env and data both sit on `/scratch/$USER`, because `/home` is far too slow for an env's thousands of small files. If a `/scratch` purge wipes them, the next `run_all.sh` rebuilds both. Partition names (`short`, `gpu`) are in each `.sbatch` header; check `sinfo -s` if yours differ.
 
 ### On a laptop
 
