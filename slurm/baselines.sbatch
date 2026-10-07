@@ -3,7 +3,7 @@
 #SBATCH --partition=short
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 #SBATCH --array=0-7
 #SBATCH --output=logs/%x_%A_%a.out
 # LR / SVM / RF baselines. A job array: eight copies run side by side, one per
