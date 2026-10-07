@@ -1,13 +1,12 @@
 # Shared settings for every Explorer job. Sourced by the other scripts in slurm/.
-# If your paths differ, edit these two lines (or export the variables before submitting).
 
-# Conda env location. Not /home: an env is thousands of tiny files and /home's
-# disk handles those like a queue at the post office (a first install there
-# crawled for 45 minutes). /scratch is fast. It gets purged now and then, but
-# run_all.sh checks the env on every run and quietly rebuilds it if it's gone.
-ENV_PREFIX="${ENV_PREFIX:-/scratch/$USER/envs/amr}"
+# Every job runs inside one container image (see container/amr.def): Python,
+# PyTorch + CUDA and scikit-learn packed into a single file on /scratch.
+# setup_env.sh builds it; run_all.sh checks it at the start of every run, so a
+# /scratch purge just means one rebuild.
+export SIF="${SIF:-/scratch/$USER/amr/amr.sif}"
 
-# Data lives on /scratch: fast and roomy, but purged now and then. That's fine
+# Data lives on /scratch too: fast and roomy, but purged now and then. That's fine
 # here, because scripts/get_data.sh re-downloads it and src.prepare rebuilds the rest.
 export AMR_DATA_DIR="${AMR_DATA_DIR:-/scratch/$USER/amr-data}"
 
@@ -27,4 +26,13 @@ if [ -n "$SLURM_ARRAY_TASK_ID" ]; then
     SPLIT=${SPLITS[$((SLURM_ARRAY_TASK_ID % 2))]}
 fi
 
-module load anaconda3/2024.06
+# Run a command inside the container.
+#   --nv              hand over the GPU, if SLURM gave this job one
+#   --bind /scratch   let the container see the data
+#   PYTHONNOUSERSITE  ignore anything pip-installed in ~/.local, so the
+#                     container's packages are the only ones in play
+run() {
+    local gpu=""
+    [ -n "${CUDA_VISIBLE_DEVICES:-}" ] && gpu="--nv"
+    apptainer exec $gpu --bind /scratch --env PYTHONNOUSERSITE=1 "$SIF" "$@"
+}

@@ -8,6 +8,5 @@
 # Collect every fold's scores into results/summary.csv.
 set -eo pipefail
 source slurm/common.sh
-source activate "$ENV_PREFIX"
 
-python -m src.summarize
+run python -m src.summarize

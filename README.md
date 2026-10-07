@@ -109,7 +109,7 @@ bash slurm/run_all.sh
 squeue -u $USER
 ```
 
-The first run also builds the conda env (~10 min); later runs just check it. Paths live in [`slurm/common.sh`](slurm/common.sh): the env and data both sit on `/scratch/$USER`, because `/home` is far too slow for an env's thousands of small files. If a `/scratch` purge wipes them, the next `run_all.sh` rebuilds both. Partition names (`short`, `gpu`) are in each `.sbatch` header; check `sinfo -s` if yours differ.
+On Explorer every job runs inside one [Apptainer](https://apptainer.org) container image ([`container/amr.def`](container/amr.def)): Python, PyTorch with CUDA 12.6 and scikit-learn packed into a single file. The cluster's shared disks crawl through the thousands of small files in a conda env (an install ran out of its hour), but load one big file quickly. The first run builds the image (~6 min); later runs just check it. The image and data sit on `/scratch/$USER` (paths in [`slurm/common.sh`](slurm/common.sh)); if a `/scratch` purge wipes them, the next `run_all.sh` rebuilds both. Partition names (`short`, `gpu`) are in each `.sbatch` header; check `sinfo -s` if yours differ.
 
 ### On a laptop
 
@@ -139,7 +139,8 @@ src/summarize.py      results/summary.csv: mean ± std per antibiotic x split x 
 
 ```
 ├── config.yaml          # every knob: antibiotics, folds, seed, FCGR k, CNN settings
-├── environment.yml
+├── environment.yml      # laptop env (conda)
+├── container/amr.def    # Explorer env (Apptainer image recipe)
 ├── scripts/
 │   └── get_data.sh      # data download
 ├── src/
@@ -167,7 +168,7 @@ src/summarize.py      results/summary.csv: mean ± std per antibiotic x split x 
 | Explainability | SHAP, matplotlib, seaborn |
 | Genomics | BioPython, Bakta / Prokka, Panaroo |
 | Transcriptomics | Salmon / Bowtie2, featureCounts, DESeq2 |
-| Data & compute | NumPy, pandas, conda, SLURM (Northeastern Explorer HPC) |
+| Data & compute | NumPy, pandas, conda, Apptainer, SLURM (Northeastern Explorer HPC) |
 
 ## Data Sources
 
@@ -177,7 +178,7 @@ src/summarize.py      results/summary.csv: mean ± std per antibiotic x split x 
 
 ## Roadmap
 
-- [x] Environment setup (conda + Explorer SLURM scripts)
+- [x] Environment setup (conda on laptop, Apptainer container + SLURM scripts on Explorer)
 - [x] Data download and caching
 - [x] Lineage-aware cross-validation splits
 - [x] Encodings: label, one-hot, FCGR (SNP profile → 64×64 image)

@@ -12,10 +12,9 @@
 # but a named card can mean a longer wait in the queue than "any GPU".
 set -eo pipefail
 source slurm/common.sh
-source activate "$ENV_PREFIX"
 nvidia-smi --query-gpu=name,memory.total --format=csv
 
 echo "Task $SLURM_ARRAY_TASK_ID: $AB / $SPLIT"
 for INPUT in fcgr label; do
-    python -m src.train_cnn --antibiotic "$AB" --split "$SPLIT" --input "$INPUT"
+    run python -m src.train_cnn --antibiotic "$AB" --split "$SPLIT" --input "$INPUT"
 done

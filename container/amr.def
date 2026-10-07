@@ -1,0 +1,19 @@
+# The project's whole software stack, packed into one container image file.
+#
+# Why bother: Explorer's shared disks move one big file quickly but crawl through
+# the thousands of tiny files a conda env is made of (a conda install there ran
+# out of its hour). Shipping one moving box beats mailing every spoon separately.
+#
+# Built automatically by slurm/setup_env.sh. By hand, on a compute node:
+#   apptainer build amr.sif container/amr.def
+
+Bootstrap: docker
+# PyTorch with CUDA 12.6: runs on every GPU type on Explorer, from T4/V100 to H200.
+# (CUDA 13 builds dropped the V100s.)
+From: pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+
+%post
+    pip install --no-cache-dir pandas scipy scikit-learn matplotlib pyyaml
+
+%test
+    python -c "import torch, sklearn, pandas, scipy, yaml; print('torch', torch.__version__, '| GPU archs', torch.cuda.get_arch_list())"

@@ -10,7 +10,6 @@
 # antibiotic x split, like eight cooks each making one dish instead of one cook making all eight.
 set -eo pipefail
 source slurm/common.sh
-source activate "$ENV_PREFIX"
 
 echo "Task $SLURM_ARRAY_TASK_ID: $AB / $SPLIT on $SLURM_CPUS_PER_TASK CPUs"
-python -m src.baselines --antibiotic "$AB" --split "$SPLIT"
+run python -m src.baselines --antibiotic "$AB" --split "$SPLIT"

@@ -8,7 +8,6 @@
 # Download the data and build data/processed/dataset.npz (SNPs, labels, families, FCGR images).
 set -eo pipefail
 source slurm/common.sh
-source activate "$ENV_PREFIX"
 
 bash scripts/get_data.sh "$AMR_DATA_DIR"
-python -m src.prepare
+run python -m src.prepare
