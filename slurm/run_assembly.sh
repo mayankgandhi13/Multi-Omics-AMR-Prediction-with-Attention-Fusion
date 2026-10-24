@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source slurm/common.sh
 mkdir -p logs/assemble
-MAX_PARALLEL=50
+MAX_PARALLEL=40
 
 bash scripts/get_metadata.sh "$MORAD_DIR"
 total=$(wc -l < "$MORAD_DIR/runs.txt")

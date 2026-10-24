@@ -23,13 +23,35 @@ if [ -s "$OUT" ]; then echo "Already assembled, skipping."; exit 0; fi
 mkdir -p "$READS" "$MORAD_DIR/assemblies" "$MORAD_DIR/qc"
 
 # 1. Download the paired reads from ENA (kept on /scratch so reruns skip this).
-urls=$(curl -sS --retry 5 "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=$RUN&result=read_run&fields=fastq_ftp" | tail -n 1 | cut -f2 | tr ';' ' ')
+# ENA pushes back ("503 busy", dropped connections) when 50 downloads arrive at
+# once, so we knock politely: start at a random moment, wait longer after each
+# refusal, resume half-finished files, and only accept a file that unzips cleanly.
+patient_curl() {   # patient_curl <output> <url>
+    for attempt in 1 2 3 4 5 6 7 8; do
+        if curl -sS --fail -C - --retry 3 --retry-all-errors --retry-delay 15 -o "$1" "$2"; then return 0; fi
+        sleep $(( attempt * 30 + RANDOM % 30 ))
+    done
+    return 1
+}
+sleep $(( RANDOM % 90 ))
+
+urls=""
+for attempt in 1 2 3 4 5; do
+    urls=$(curl -sS --fail "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=$RUN&result=read_run&fields=fastq_ftp" \
+           | tail -n 1 | cut -f2 | tr ';' ' ') || true
+    [ -n "$urls" ] && break
+    sleep $(( attempt * 30 ))
+done
+[ -n "$urls" ] || { echo "Could not get read URLs for $RUN from ENA"; exit 1; }
+
 for url in $urls; do
     file="$READS/$(basename "$url")"
-    if [ ! -s "$file" ]; then
-        curl -sS --fail --retry 5 -o "$file.partial" "https://$url"
-        mv "$file.partial" "$file"
+    [ -s "$file" ] && continue
+    patient_curl "$file.partial" "https://$url"
+    if ! gzip -t "$file.partial" 2>/dev/null; then   # complete-looking but corrupt: start over next time
+        rm -f "$file.partial"; echo "Corrupt download: $url"; exit 1
     fi
+    mv "$file.partial" "$file"
 done
 R1="$READS/${RUN}_1.fastq.gz"; R2="$READS/${RUN}_2.fastq.gz"
 
