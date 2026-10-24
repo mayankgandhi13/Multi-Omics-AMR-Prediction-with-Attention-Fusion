@@ -24,3 +24,12 @@ cnn:
   batch_size: 8   # same as the original paper
   lr: 0.001
   weight_decay: 0.0001
+
+# --- Phase 2 (pangenome) ---
+# An assembly must look like a whole, clean E. coli genome to go any further.
+# Thresholds modelled on EnteroBase's E. coli criteria.
+assembly_qc:
+  min_length: 3700000   # bp; much smaller = big chunks missing
+  max_length: 6400000   # bp; much bigger = probably two strains mixed together
+  max_contigs: 800      # more pieces than this = too shattered to trust
+  min_n50: 20000        # half the genome sits in contigs at least this long

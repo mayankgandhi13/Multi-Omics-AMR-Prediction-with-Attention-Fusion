@@ -50,3 +50,5 @@ tool() {
     local image="$1"; shift
     apptainer exec --bind /scratch "$IMAGES/$image.sif" "$@"
 }
+# Bakta's reference database (tens of GB), downloaded once by bakta_db.sbatch.
+export BAKTA_DB="/scratch/$USER/amr/bakta_db/db"
