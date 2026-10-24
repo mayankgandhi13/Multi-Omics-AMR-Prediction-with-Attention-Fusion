@@ -1,0 +1,51 @@
+#!/bin/bash
+#SBATCH --job-name=amr-assemble
+#SBATCH --partition=short
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=16G
+#SBATCH --time=02:00:00
+#SBATCH --output=logs/assemble/%x_%A_%a.out
+# One isolate per array task: download reads -> clean (fastp) -> assemble (Shovill).
+#
+# Like rebuilding a shredded book: fetch the strips, throw out the smudged ones,
+# then stitch the rest back together by their overlaps.
+# Restartable: an isolate that already has an assembly is skipped, and reads
+# already on disk are not downloaded again. Submitted by slurm/run_assembly.sh.
+set -eo pipefail
+source slurm/common.sh
+
+line=$(( ${OFFSET:-0} + SLURM_ARRAY_TASK_ID + 1 ))   # SLURM caps arrays at 1,001 tasks, so big runs come in chunks
+RUN=$(sed -n "${line}p" "$MORAD_DIR/runs.txt")
+OUT="$MORAD_DIR/assemblies/$RUN.fasta"
+READS="$MORAD_DIR/reads/$RUN"
+echo "Isolate $line: $RUN on $(hostname)"
+if [ -s "$OUT" ]; then echo "Already assembled, skipping."; exit 0; fi
+mkdir -p "$READS" "$MORAD_DIR/assemblies" "$MORAD_DIR/qc"
+
+# 1. Download the paired reads from ENA (kept on /scratch so reruns skip this).
+urls=$(curl -sS --retry 5 "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=$RUN&result=read_run&fields=fastq_ftp" | tail -n 1 | cut -f2 | tr ';' ' ')
+for url in $urls; do
+    file="$READS/$(basename "$url")"
+    if [ ! -s "$file" ]; then
+        curl -sS --fail --retry 5 -o "$file.partial" "https://$url"
+        mv "$file.partial" "$file"
+    fi
+done
+R1="$READS/${RUN}_1.fastq.gz"; R2="$READS/${RUN}_2.fastq.gz"
+
+# 2 + 3 work on the node's local disk: fast, and nothing half-done lands on /scratch.
+WORK="/tmp/$USER-$RUN"
+trap 'rm -rf "$WORK"' EXIT
+mkdir -p "$WORK"
+
+# 2. fastp: trim adapters and low-quality ends; keep its quality report.
+tool fastp fastp -i "$R1" -I "$R2" -o "$WORK/clean_1.fq.gz" -O "$WORK/clean_2.fq.gz" \
+    --thread "$SLURM_CPUS_PER_TASK" --json "$MORAD_DIR/qc/$RUN.fastp.json" --html /dev/null
+
+# 3. Shovill: SPAdes assembly with read correction, polishing and junk-contig removal.
+tool shovill shovill --R1 "$WORK/clean_1.fq.gz" --R2 "$WORK/clean_2.fq.gz" --outdir "$WORK/shovill" \
+    --cpus "$SLURM_CPUS_PER_TASK" --ram 14 --tmpdir "$WORK"
+
+cp "$WORK/shovill/contigs.fa" "$OUT.partial"
+mv "$OUT.partial" "$OUT"   # only a finished assembly gets the real name
+echo "Done: $(grep -c '>' "$OUT") contigs"

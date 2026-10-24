@@ -21,7 +21,7 @@ SPLITS=(random lineage)
 
 # Array jobs have 8 tasks: one per antibiotic x split.
 # Task 0 = CIP/random, 1 = CIP/lineage, 2 = CTX/random, ... 7 = GEN/lineage.
-if [ -n "$SLURM_ARRAY_TASK_ID" ]; then
+if [ -n "${SLURM_ARRAY_TASK_ID:-}" ]; then
     AB=${ANTIBIOTICS[$((SLURM_ARRAY_TASK_ID / 2))]}
     SPLIT=${SPLITS[$((SLURM_ARRAY_TASK_ID % 2))]}
 fi
@@ -35,4 +35,18 @@ run() {
     local gpu=""
     [ -n "${CUDA_VISIBLE_DEVICES:-}" ] && gpu="--nv"
     apptainer exec $gpu --bind /scratch --env PYTHONNOUSERSITE=1 "$SIF" "$@"
+}
+
+# --- Phase 2 (pangenome) -----------------------------------------------------
+# Moradigaravand et al. 2018: 1,936 E. coli with public reads + phenotypes.
+export MORAD_DIR="$AMR_DATA_DIR/moradigaravand"
+# One ready-made BioContainers image per tool (fastp, shovill, bakta, panaroo),
+# pulled once by slurm/bio_images.sbatch. Like borrowing each specialist's own
+# toolbox instead of cramming every tool into one drawer.
+export IMAGES="/scratch/$USER/amr/images"
+
+# Run a bioinformatics tool from its image:  tool shovill shovill --help
+tool() {
+    local image="$1"; shift
+    apptainer exec --bind /scratch "$IMAGES/$image.sif" "$@"
 }
