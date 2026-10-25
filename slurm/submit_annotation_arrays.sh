@@ -1,9 +1,10 @@
 #!/bin/bash
 # Called by run_annotation.sh once passed.txt exists: one Bakta task per genome,
 # in chunks of 1,000 (SLURM's array cap), at most MAX_PARALLEL at a time.
+# Bakta needs no downloads, so it can run wider than the assembly step.
 set -euo pipefail
 source slurm/common.sh
-MAX_PARALLEL=50
+MAX_PARALLEL=60
 
 total=$(wc -l < "$MORAD_DIR/passed.txt")
 n=${1:-$total}
