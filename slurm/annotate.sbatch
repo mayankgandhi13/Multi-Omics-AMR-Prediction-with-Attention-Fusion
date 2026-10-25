@@ -23,9 +23,11 @@ WORK="/tmp/$USER-bakta-$RUN"
 trap 'rm -rf "$WORK"' EXIT
 rm -rf "$WORK"
 
+# --skip-crispr: CRISPR arrays (a bacterial immune memory) play no part in our
+# resistance gene table, and PilerCR, the tool that finds them, crashed on 23 genomes.
 tool bakta bakta --db "$BAKTA_DB" --output "$WORK" --prefix "$RUN" --locus-tag "$RUN" \
     --genus Escherichia --species coli --translation-table 11 \
-    --threads "$SLURM_CPUS_PER_TASK" --skip-plot --tmp-dir /tmp \
+    --threads "$SLURM_CPUS_PER_TASK" --skip-plot --skip-crispr --tmp-dir /tmp \
     "$MORAD_DIR/assemblies/$RUN.fasta"
 
 mkdir -p "$(dirname "$OUT")"
