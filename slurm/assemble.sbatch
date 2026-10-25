@@ -46,14 +46,18 @@ done
 
 for url in $urls; do
     file="$READS/$(basename "$url")"
-    [ -s "$file" ] && continue
+    # A file already on disk gets the same check; a corrupt one is fetched again.
+    if [ -s "$file" ] && gzip -t "$file" 2>/dev/null; then continue; fi
+    rm -f "$file"
     patient_curl "$file.partial" "https://$url"
     if ! gzip -t "$file.partial" 2>/dev/null; then   # complete-looking but corrupt: start over next time
         rm -f "$file.partial"; echo "Corrupt download: $url"; exit 1
     fi
     mv "$file.partial" "$file"
 done
-R1="$READS/${RUN}_1.fastq.gz"; R2="$READS/${RUN}_2.fastq.gz"
+# Some isolates are listed by sample ID (ERS...) but ENA names the files by run
+# ID (ERR...), so find the pair by its _1/_2 ending rather than by name.
+R1=$(ls "$READS"/*_1.fastq.gz | head -1); R2=$(ls "$READS"/*_2.fastq.gz | head -1)
 
 # 2 + 3 work on the node's local disk: fast, and nothing half-done lands on /scratch.
 WORK="/tmp/$USER-$RUN"
@@ -65,8 +69,10 @@ tool fastp fastp -i "$R1" -I "$R2" -o "$WORK/clean_1.fq.gz" -O "$WORK/clean_2.fq
     --thread "$SLURM_CPUS_PER_TASK" --json "$MORAD_DIR/qc/$RUN.fastp.json" --html /dev/null
 
 # 3. Shovill: SPAdes assembly with read correction, polishing and junk-contig removal.
+# --gsize 5M: we already know an E. coli genome is ~5 Mb, so skip Shovill's own
+# size estimate (kmc), which hung on 13 isolates in the first full run.
 tool shovill shovill --R1 "$WORK/clean_1.fq.gz" --R2 "$WORK/clean_2.fq.gz" --outdir "$WORK/shovill" \
-    --cpus "$SLURM_CPUS_PER_TASK" --ram 14 --tmpdir "$WORK"
+    --gsize 5M --cpus "$SLURM_CPUS_PER_TASK" --ram 14 --tmpdir "$WORK"
 
 cp "$WORK/shovill/contigs.fa" "$OUT.partial"
 mv "$OUT.partial" "$OUT"   # only a finished assembly gets the real name
