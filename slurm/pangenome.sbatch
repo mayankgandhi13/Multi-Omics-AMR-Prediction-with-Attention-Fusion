@@ -22,10 +22,13 @@ trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK"
 
 # Input list: genomes that passed QC and have a finished annotation.
+# (Build the full list first, then trim: piping straight into `head` would end the
+# loop early with SIGPIPE, which strict mode treats as a failure.)
 while read -r run; do
     gff="$MORAD_DIR/annotations/$run/$run.gff3"
-    [ -s "$gff" ] && echo "$gff"
-done < "$MORAD_DIR/passed.txt" | head -n "${N:-1000000}" > "$WORK/inputs.txt"
+    if [ -s "$gff" ]; then echo "$gff"; fi
+done < "$MORAD_DIR/passed.txt" > "$WORK/all_inputs.txt"
+head -n "${N:-1000000}" "$WORK/all_inputs.txt" > "$WORK/inputs.txt"
 echo "Building pangenome from $(wc -l < "$WORK/inputs.txt") genomes"
 
 # --clean-mode strict: remove genes that look like contamination or assembly junk.
