@@ -2,7 +2,7 @@
 #SBATCH --job-name=amr-pangenome
 #SBATCH --partition=short
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=16G
+#SBATCH --mem=64G   # the one exception to the 16G rule: tests showed ~3.3 GB per 100 genomes
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/%x_%j.out
 # Panaroo: compare every annotated genome and build one gene presence/absence table.
