@@ -21,10 +21,24 @@ CODE = {"A": 1, "G": 2, "C": 3, "T": 4}
 
 
 def read_calls(path):
-    """Positions, alt-base codes and annotations of one isolate's single-base SNPs."""
-    calls = pd.read_csv(path, sep="\t", usecols=["POS", "TYPE", "ALT", "GENE", "EFFECT"], dtype=str)
-    calls = calls[(calls["TYPE"] == "snp") & calls["ALT"].isin(CODE.keys())]
-    return calls["POS"].astype(np.int32).to_numpy(), calls["ALT"].map(CODE).to_numpy(np.int8), calls
+    """
+    Single-base changes of one isolate: positions, alt-base codes, annotations.
+
+    Snippy reports neighbouring changes as one multi-base call ("mnp"/"complex"),
+    and that's how key resistance mutations such as gyrA D87N and parC S80I
+    often come out. Calls where REF and ALT have the same length are split back
+    into their individual changed bases, so none of them are lost. (Insertions and
+    deletions shift the sequence and are left out, as in Phase 1.)
+    """
+    calls = pd.read_csv(path, sep="\t", usecols=["POS", "TYPE", "REF", "ALT", "GENE", "EFFECT"], dtype=str)
+    calls = calls[calls["REF"].str.len() == calls["ALT"].str.len()]
+    rows = []
+    for pos, ref, alt, gene, effect in calls[["POS", "REF", "ALT", "GENE", "EFFECT"]].itertuples(index=False):
+        for k, (r, a) in enumerate(zip(ref, alt)):
+            if r != a and a in CODE:
+                rows.append((int(pos) + k, CODE[a], gene, effect))
+    out = pd.DataFrame(rows, columns=["POS", "CODE", "GENE", "EFFECT"])
+    return out["POS"].to_numpy(np.int32), out["CODE"].to_numpy(np.int8), out
 
 
 def main():
