@@ -11,7 +11,7 @@ import pandas as pd
 
 from .data import load_config
 
-KEYS = ["antibiotic", "split", "model", "encoding"]
+KEYS = ["dataset", "antibiotic", "split", "model", "encoding"]
 METRICS = ["auroc", "auprc", "mcc", "f1", "vme", "me"]
 
 
@@ -23,6 +23,7 @@ def main():
         return
 
     folds = pd.concat(map(pd.read_csv, files))
+    folds["dataset"] = folds.get("dataset", pd.Series(index=folds.index, dtype=object)).fillna("giessen")  # Phase 1 files predate the column
     stats = folds.groupby(KEYS)[METRICS].agg(["mean", "std"])
     table = pd.DataFrame({m: stats[(m, "mean")].map("{:.3f}".format) + " ± " + stats[(m, "std")].map("{:.3f}".format)
                           for m in METRICS})

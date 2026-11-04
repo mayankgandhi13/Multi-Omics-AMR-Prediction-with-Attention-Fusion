@@ -17,6 +17,13 @@ RAW_SNPS = "raw/Giessen_dataset/cip_ctx_ctz_gen_multi_data.csv"
 RAW_PHENO = "raw/Giessen_dataset/cip_ctx_ctz_gen_pheno.csv"
 PROCESSED = "processed/dataset.npz"
 
+# Every dataset is cached in the same format (X, labels, lineage, isolates,
+# antibiotics), so the same training scripts run on any of them.
+DATASETS = {
+    "giessen": PROCESSED,                                     # Phase 1: SNPs, 809 isolates
+    "pangenome": "moradigaravand/processed/pangenome.npz",    # Phase 2: gene table, ~1,900 isolates
+}
+
 
 def load_config(path=ROOT / "config.yaml"):
     with open(path) as f:
@@ -43,11 +50,12 @@ def read_raw(cfg):
     return snps, pheno
 
 
-def load_processed(cfg):
-    """Load the arrays cached by `python -m src.prepare`."""
-    path = cfg["data_dir"] / PROCESSED
+def load_processed(cfg, dataset="giessen"):
+    """Load a cached dataset (see DATASETS)."""
+    path = cfg["data_dir"] / DATASETS[dataset]
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found. Run `python -m src.prepare` first.")
+        step = "src.prepare" if dataset == "giessen" else "src.prepare_pangenome"
+        raise FileNotFoundError(f"{path} not found. Run `python -m {step}` first.")
     with np.load(path) as d:
         return {k: d[k] for k in d.files}
 

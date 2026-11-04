@@ -33,3 +33,12 @@ assembly_qc:
   max_length: 6400000   # bp; much bigger = probably two strains mixed together
   max_contigs: 800      # more pieces than this = too shattered to trust
   min_n50: 20000        # half the genome sits in contigs at least this long
+
+pangenome:
+  # Keep genes that vary: present in at least 1% and at most 99% of isolates.
+  # Genes everyone has (core) or almost no one has can't tell isolates apart.
+  min_frequency: 0.01
+  max_frequency: 0.99
+  # Lineage families for honest splits, as in Phase 1, but measured on gene
+  # content: isolates closer than this fraction of variable genes are "family".
+  lineage_max_distance: 0.05

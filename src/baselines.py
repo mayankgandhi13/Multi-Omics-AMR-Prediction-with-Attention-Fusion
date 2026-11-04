@@ -52,11 +52,17 @@ def main():
     ap.add_argument("--antibiotic", required=True)
     ap.add_argument("--split", choices=["random", "lineage"], default="lineage")
     ap.add_argument("--models", nargs="+", default=["LR", "SVM", "RF"])
-    ap.add_argument("--encodings", nargs="+", choices=["label", "onehot"], default=["label", "onehot"])
+    ap.add_argument("--dataset", choices=["giessen", "pangenome"], default="giessen")
+    ap.add_argument("--encodings", nargs="+", choices=["label", "onehot", "genes"],
+                    help="SNP encodings for giessen (default: label onehot); pangenome is always 'genes'")
     args = ap.parse_args()
+    if args.dataset == "pangenome":
+        args.encodings = ["genes"]   # already a 0/1 table: nothing to encode
+    elif not args.encodings:
+        args.encodings = ["label", "onehot"]
 
     cfg = load_config()
-    data = load_processed(cfg)
+    data = load_processed(cfg, args.dataset)
     y, tested = get_labels(data, args.antibiotic)
     y, X_raw = y[tested].astype(int), data["X"][tested]
     isolates = data["isolates"][tested]
@@ -64,12 +70,12 @@ def main():
 
     metrics, predictions = [], []
     for enc in args.encodings:
-        X = X_raw.astype(np.float32) if enc == "label" else one_hot(X_raw)
+        X = one_hot(X_raw) if enc == "onehot" else X_raw.astype(np.float32)
         for name in args.models:
             for fold, (train, test) in enumerate(folds):
                 model = make_model(name, cfg["seed"]).fit(X[train], y[train])
                 prob = resistance_score(model, X[test])
-                tags = {"antibiotic": args.antibiotic, "split": args.split, "model": name,
+                tags = {"dataset": args.dataset, "antibiotic": args.antibiotic, "split": args.split, "model": name,
                         "encoding": enc, "fold": fold}
                 metrics.append({**tags, **score(y[test], prob)})
                 predictions.append(pd.DataFrame({**tags, "isolate": isolates[test],
@@ -79,7 +85,7 @@ def main():
 
     out = cfg["results_dir"] / "baselines"
     out.mkdir(parents=True, exist_ok=True)
-    tag = f"{args.antibiotic}_{args.split}"
+    tag = f"{args.antibiotic}_{args.split}" if args.dataset == "giessen" else f"{args.dataset}_{args.antibiotic}_{args.split}"
     pd.DataFrame(metrics).to_csv(out / f"{tag}_metrics.csv", index=False)
     pd.concat(predictions).to_csv(out / f"{tag}_predictions.csv", index=False)
     print(f"Saved results to {out}")
