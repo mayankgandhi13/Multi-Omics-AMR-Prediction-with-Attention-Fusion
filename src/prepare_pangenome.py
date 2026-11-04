@@ -33,11 +33,22 @@ def main():
 
     print("Reading Panaroo gene table...")
     table = pd.read_csv(morad / "pangenome" / "gene_presence_absence.Rtab", sep="\t", index_col=0)
+    meta = pd.read_csv(morad / "metadata.csv", encoding="utf-8-sig").set_index("Lane.accession")
+
+    # A few rows of the paper's table point two isolates at the same ENA sample:
+    # one genome, two (sometimes contradictory) phenotypes. We can't tell which
+    # label belongs to the reads, so both are dropped. (pandas renames the second
+    # copy's column "X.1", hence the split on ".".)
+    shared = set(meta.index[meta.index.duplicated()])
+    table = table[[c for c in table.columns if c.split(".")[0] not in shared]]
+    meta = meta[~meta.index.isin(shared)]
+    if shared:
+        print(f"  dropped {', '.join(sorted(shared))}: one sample listed for two isolates")
+
     genes = table.T.astype(np.int8)          # rows = isolates (named by run), columns = gene families
     print(f"  {genes.shape[0]} isolates x {genes.shape[1]:,} gene families")
 
     print("Attaching phenotypes...")
-    meta = pd.read_csv(morad / "metadata.csv", encoding="utf-8-sig").set_index("Lane.accession")
     labels = meta.loc[genes.index, cfg["antibiotics"]].apply(lambda col: col.map(LABEL)).to_numpy(np.float32)
     for ab, col in zip(cfg["antibiotics"], labels.T):
         print(f"  {ab}: {int(np.nansum(col))} resistant / {int((col == 0).sum())} susceptible / {int(np.isnan(col).sum())} not used")
