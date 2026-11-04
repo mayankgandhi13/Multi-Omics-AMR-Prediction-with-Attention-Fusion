@@ -52,11 +52,11 @@ def main():
     ap.add_argument("--antibiotic", required=True)
     ap.add_argument("--split", choices=["random", "lineage"], default="lineage")
     ap.add_argument("--models", nargs="+", default=["LR", "SVM", "RF"])
-    ap.add_argument("--dataset", choices=["giessen", "pangenome", "snps"], default="giessen")
+    ap.add_argument("--dataset", choices=["giessen", "pangenome", "snps", "combined"], default="giessen")
     ap.add_argument("--encodings", nargs="+", choices=["label", "onehot", "genes"],
-                    help="SNP encodings for giessen/snps (default: label onehot); pangenome is always 'genes'")
+                    help="SNP encodings for giessen/snps (default: label onehot); pangenome/combined are 0/1 already")
     args = ap.parse_args()
-    if args.dataset == "pangenome":
+    if args.dataset in ("pangenome", "combined"):
         args.encodings = ["genes"]   # already a 0/1 table: nothing to encode
     elif not args.encodings:
         args.encodings = ["label", "onehot"]

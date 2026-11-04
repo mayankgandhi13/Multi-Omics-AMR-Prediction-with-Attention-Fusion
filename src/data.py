@@ -23,6 +23,7 @@ DATASETS = {
     "giessen": PROCESSED,                                     # Phase 1: SNPs, 809 isolates
     "pangenome": "moradigaravand/processed/pangenome.npz",    # Phase 2: gene table, ~1,900 isolates
     "snps": "moradigaravand/processed/snps.npz",              # Phase 2: SNPs vs K-12, same isolates
+    "combined": "moradigaravand/processed/combined.npz",      # Phase 2: genes + SNPs side by side
 }
 
 

@@ -11,6 +11,11 @@ exactly the same folds: any difference in scores comes from the features alone.
 Encoding matches Phase 1: 0 = same as reference (or not called), 1=A 2=G 3=C 4=T.
 Each kept position is labelled with its gene and protein change from Snippy
 (e.g. "2339162:gyrA:p.Ser83Leu"), so important SNPs can be read off directly.
+
+It also writes a "combined" dataset: the gene table and the SNPs side by side,
+with each SNP as a yes/no ("does this isolate differ from K-12 here?") so both
+halves speak the same 0/1 language. This is the simplest possible fusion: one
+model, both kinds of evidence, before the attention model in Phase 4.
 """
 import numpy as np
 import pandas as pd
@@ -69,10 +74,17 @@ def main():
         hit = (idx < len(keep)) & (keep[np.minimum(idx, len(keep) - 1)] == pos)
         X[i, idx[hit]] = code[hit]
 
+    snp_names = np.array([f"{p}:{notes[p]}" for p in keep])
+    shared = dict(labels=genes["labels"], lineage=genes["lineage"], isolates=isolates, antibiotics=genes["antibiotics"])
     out = cfg["data_dir"] / DATASETS["snps"]
-    np.savez_compressed(out, X=X, labels=genes["labels"], lineage=genes["lineage"], isolates=isolates,
-                        features=np.array([f"{p}:{notes[p]}" for p in keep]), antibiotics=genes["antibiotics"])
+    np.savez_compressed(out, X=X, features=snp_names, **shared)
     print(f"Saved {out}: {X.shape[0]} isolates x {X.shape[1]:,} SNP positions")
+
+    combined = np.hstack([genes["X"], (X != 0).astype(np.int8)])
+    names = np.concatenate([np.char.add("gene:", genes["features"].astype(str)), np.char.add("snp:", snp_names)])
+    out = cfg["data_dir"] / DATASETS["combined"]
+    np.savez_compressed(out, X=combined, features=names, **shared)
+    print(f"Saved {out}: {combined.shape[0]} isolates x {combined.shape[1]:,} features (genes + SNPs)")
 
 
 if __name__ == "__main__":
