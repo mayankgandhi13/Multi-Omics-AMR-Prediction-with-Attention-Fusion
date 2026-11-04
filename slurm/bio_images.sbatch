@@ -14,6 +14,7 @@ declare -A IMAGE_TAGS=(
     [shovill]="quay.io/biocontainers/shovill:1.4.2--hdfd78af_1"
     [bakta]="quay.io/biocontainers/bakta:1.12.2--pyhdfd78af_0"
     [panaroo]="quay.io/biocontainers/panaroo:1.8.0--pyhdfd78af_1"
+    [snippy]="quay.io/biocontainers/snippy:4.6.0--hdfd78af_6"
 )
 mkdir -p "$IMAGES"
 # Unpack on the node's local disk (fast); only the finished .sif lands on /scratch.
@@ -30,5 +31,15 @@ for name in "${!IMAGE_TAGS[@]}"; do
         echo "$name: pulled"
     fi
 done
+# Reference genome for SNP calling: E. coli K-12 MG1655, the same one Ren et al. used.
+REF="$MORAD_DIR/reference/MG1655.gbk"
+if [ ! -s "$REF" ]; then
+    mkdir -p "$(dirname "$REF")"
+    curl -sS --fail --retry 5 -o "$REF.partial" \
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_000913.3&rettype=gbwithparts&retmode=text"
+    mv "$REF.partial" "$REF"
+fi
+echo "Reference: $(head -1 "$REF" | cut -c1-60)"
+
 tool fastp fastp --version
 tool shovill shovill --version
