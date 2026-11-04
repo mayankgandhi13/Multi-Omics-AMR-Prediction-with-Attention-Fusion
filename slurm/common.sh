@@ -46,9 +46,12 @@ export MORAD_DIR="$AMR_DATA_DIR/moradigaravand"
 export IMAGES="/scratch/$USER/amr/images"
 
 # Run a bioinformatics tool from its image:  tool shovill shovill --help
+# --cleanenv starts the tool with a clean environment instead of inheriting
+# ours. Explorer exports a customised `which` command that the images' minimal
+# `which` doesn't understand, which made Snippy think bwa was missing.
 tool() {
     local image="$1"; shift
-    apptainer exec --bind /scratch "$IMAGES/$image.sif" "$@"
+    apptainer exec --cleanenv --bind /scratch "$IMAGES/$image.sif" "$@"
 }
 # Bakta's reference database (tens of GB), downloaded once by bakta_db.sbatch.
 export BAKTA_DB="/scratch/$USER/amr/bakta_db/db"

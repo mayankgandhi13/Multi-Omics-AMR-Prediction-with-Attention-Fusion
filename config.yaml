@@ -42,3 +42,9 @@ pangenome:
   # Lineage families for honest splits, as in Phase 1, but measured on gene
   # content: isolates closer than this fraction of variable genes are "family".
   lineage_max_distance: 0.10   # 221 families, biggest 15%: same shape as Phase 1 (242, 20%)
+
+snps:
+  # Keep SNP positions seen in at least 1% of isolates. (Ren et al. used 20%,
+  # which would sit right at the frequency of key resistance mutations like
+  # gyrA S83L, ~22% here, and could throw them away.)
+  min_frequency: 0.01
