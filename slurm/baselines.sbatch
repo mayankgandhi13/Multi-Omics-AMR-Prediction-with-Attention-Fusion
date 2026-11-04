@@ -11,5 +11,6 @@
 set -eo pipefail
 source slurm/common.sh
 
-echo "Task $SLURM_ARRAY_TASK_ID: $AB / $SPLIT on $SLURM_CPUS_PER_TASK CPUs"
-run python -m src.baselines --antibiotic "$AB" --split "$SPLIT"
+echo "Task $SLURM_ARRAY_TASK_ID: ${DATASET:-giessen} $AB / $SPLIT on $SLURM_CPUS_PER_TASK CPUs"
+# Phase 2 gene table: sbatch --export=ALL,DATASET=pangenome slurm/baselines.sbatch
+run python -m src.baselines --dataset "${DATASET:-giessen}" --antibiotic "$AB" --split "$SPLIT"

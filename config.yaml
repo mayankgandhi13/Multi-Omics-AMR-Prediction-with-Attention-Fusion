@@ -41,4 +41,4 @@ pangenome:
   max_frequency: 0.99
   # Lineage families for honest splits, as in Phase 1, but measured on gene
   # content: isolates closer than this fraction of variable genes are "family".
-  lineage_max_distance: 0.05
+  lineage_max_distance: 0.10   # 221 families, biggest 15%: same shape as Phase 1 (242, 20%)
