@@ -13,4 +13,5 @@ source slurm/common.sh
 
 echo "Task $SLURM_ARRAY_TASK_ID: ${DATASET:-giessen} $AB / $SPLIT on $SLURM_CPUS_PER_TASK CPUs"
 # Phase 2 gene table: sbatch --export=ALL,DATASET=pangenome slurm/baselines.sbatch
-run python -m src.baselines --dataset "${DATASET:-giessen}" --antibiotic "$AB" --split "$SPLIT"
+# Shortlist features first: sbatch --export=ALL,DATASET=snps,TOP=1000 slurm/baselines.sbatch
+run python -m src.baselines --dataset "${DATASET:-giessen}" --antibiotic "$AB" --split "$SPLIT" ${TOP:+--top "$TOP"}
