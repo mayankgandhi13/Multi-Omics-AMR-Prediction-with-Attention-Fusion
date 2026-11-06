@@ -48,3 +48,14 @@ snps:
   # which would sit right at the frequency of key resistance mutations like
   # gyrA S83L, ~22% here, and could throw them away.)
   min_frequency: 0.01
+
+# --- Phase 4 (attention fusion) ---
+fusion:
+  top: 1000          # per data type, keep the K columns most linked to resistance (picked inside each training fold)
+  hidden: 128
+  embed_dim: 64
+  dropout: 0.3
+  epochs: 100
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
